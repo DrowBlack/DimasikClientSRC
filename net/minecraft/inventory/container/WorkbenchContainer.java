@@ -1,0 +1,163 @@
+package net.minecraft.inventory.container;
+
+import java.util.Optional;
+import net.minecraft.block.Blocks;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.CraftResultInventory;
+import net.minecraft.inventory.CraftingInventory;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.inventory.container.CraftingResultSlot;
+import net.minecraft.inventory.container.RecipeBookContainer;
+import net.minecraft.inventory.container.Slot;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.ICraftingRecipe;
+import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.IRecipeType;
+import net.minecraft.item.crafting.RecipeBookCategory;
+import net.minecraft.item.crafting.RecipeItemHelper;
+import net.minecraft.network.play.server.SSetSlotPacket;
+import net.minecraft.util.IWorldPosCallable;
+import net.minecraft.world.World;
+
+public class WorkbenchContainer
+extends RecipeBookContainer<CraftingInventory> {
+    private final CraftingInventory craftMatrix = new CraftingInventory(this, 3, 3);
+    private final CraftResultInventory craftResult = new CraftResultInventory();
+    private final IWorldPosCallable worldPosCallable;
+    private final PlayerEntity player;
+
+    public WorkbenchContainer(int id, PlayerInventory playerInventory) {
+        this(id, playerInventory, IWorldPosCallable.DUMMY);
+    }
+
+    public WorkbenchContainer(int id, PlayerInventory playerInventory, IWorldPosCallable p_i50090_3_) {
+        super(ContainerType.CRAFTING, id);
+        this.worldPosCallable = p_i50090_3_;
+        this.player = playerInventory.player;
+        this.addSlot(new CraftingResultSlot(playerInventory.player, this.craftMatrix, this.craftResult, 0, 124, 35));
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                this.addSlot(new Slot(this.craftMatrix, j + i * 3, 30 + j * 18, 17 + i * 18));
+            }
+        }
+        for (int k = 0; k < 3; ++k) {
+            for (int i1 = 0; i1 < 9; ++i1) {
+                this.addSlot(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
+            }
+        }
+        for (int l = 0; l < 9; ++l) {
+            this.addSlot(new Slot(playerInventory, l, 8 + l * 18, 142));
+        }
+    }
+
+    protected static void updateCraftingResult(int id, World world, PlayerEntity player, CraftingInventory inventory, CraftResultInventory inventoryResult) {
+        if (!world.isRemote) {
+            ICraftingRecipe icraftingrecipe;
+            ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)player;
+            ItemStack itemstack = ItemStack.EMPTY;
+            Optional<ICraftingRecipe> optional = world.getServer().getRecipeManager().getRecipe(IRecipeType.CRAFTING, inventory, world);
+            if (optional.isPresent() && inventoryResult.canUseRecipe(world, serverplayerentity, icraftingrecipe = optional.get())) {
+                itemstack = icraftingrecipe.getCraftingResult(inventory);
+            }
+            inventoryResult.setInventorySlotContents(0, itemstack);
+            serverplayerentity.connection.sendPacket(new SSetSlotPacket(id, 0, itemstack));
+        }
+    }
+
+    @Override
+    public void onCraftMatrixChanged(IInventory inventoryIn) {
+        this.worldPosCallable.consume((p_217069_1_, p_217069_2_) -> WorkbenchContainer.updateCraftingResult(this.windowId, p_217069_1_, this.player, this.craftMatrix, this.craftResult));
+    }
+
+    @Override
+    public void fillStackedContents(RecipeItemHelper itemHelperIn) {
+        this.craftMatrix.fillStackedContents(itemHelperIn);
+    }
+
+    @Override
+    public void clear() {
+        this.craftMatrix.clear();
+        this.craftResult.clear();
+    }
+
+    @Override
+    public boolean matches(IRecipe<? super CraftingInventory> recipeIn) {
+        return recipeIn.matches(this.craftMatrix, this.player.world);
+    }
+
+    @Override
+    public void onContainerClosed(PlayerEntity playerIn) {
+        super.onContainerClosed(playerIn);
+        this.worldPosCallable.consume((p_217068_2_, p_217068_3_) -> this.clearContainer(playerIn, (World)p_217068_2_, this.craftMatrix));
+    }
+
+    @Override
+    public boolean canInteractWith(PlayerEntity playerIn) {
+        return WorkbenchContainer.isWithinUsableDistance(this.worldPosCallable, playerIn, Blocks.CRAFTING_TABLE);
+    }
+
+    @Override
+    public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
+        ItemStack itemstack = ItemStack.EMPTY;
+        Slot slot = (Slot)this.inventorySlots.get(index);
+        if (slot != null && slot.getHasStack()) {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
+            if (index == 0) {
+                this.worldPosCallable.consume((p_217067_2_, p_217067_3_) -> itemstack1.getItem().onCreated(itemstack1, (World)p_217067_2_, playerIn));
+                if (!this.mergeItemStack(itemstack1, 10, 46, true)) {
+                    return ItemStack.EMPTY;
+                }
+                slot.onSlotChange(itemstack1, itemstack);
+            } else if (index >= 10 && index < 46 ? !this.mergeItemStack(itemstack1, 1, 10, false) && (index < 37 ? !this.mergeItemStack(itemstack1, 37, 46, false) : !this.mergeItemStack(itemstack1, 10, 37, false)) : !this.mergeItemStack(itemstack1, 10, 46, false)) {
+                return ItemStack.EMPTY;
+            }
+            if (itemstack1.isEmpty()) {
+                slot.putStack(ItemStack.EMPTY);
+            } else {
+                slot.onSlotChanged();
+            }
+            if (itemstack1.getCount() == itemstack.getCount()) {
+                return ItemStack.EMPTY;
+            }
+            ItemStack itemstack2 = slot.onTake(playerIn, itemstack1);
+            if (index == 0) {
+                playerIn.dropItem(itemstack2, false);
+            }
+        }
+        return itemstack;
+    }
+
+    @Override
+    public boolean canMergeSlot(ItemStack stack, Slot slotIn) {
+        return slotIn.inventory != this.craftResult && super.canMergeSlot(stack, slotIn);
+    }
+
+    @Override
+    public int getOutputSlot() {
+        return 0;
+    }
+
+    @Override
+    public int getWidth() {
+        return this.craftMatrix.getWidth();
+    }
+
+    @Override
+    public int getHeight() {
+        return this.craftMatrix.getHeight();
+    }
+
+    @Override
+    public int getSize() {
+        return 10;
+    }
+
+    @Override
+    public RecipeBookCategory func_241850_m() {
+        return RecipeBookCategory.CRAFTING;
+    }
+}

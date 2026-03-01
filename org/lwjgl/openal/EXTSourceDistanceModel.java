@@ -1,0 +1,8 @@
+package org.lwjgl.openal;
+
+public final class EXTSourceDistanceModel {
+    public static final int AL_SOURCE_DISTANCE_MODEL = 512;
+
+    private EXTSourceDistanceModel() {
+    }
+}

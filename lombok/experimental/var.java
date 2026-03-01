@@ -1,0 +1,5 @@
+package lombok.experimental;
+
+@Deprecated
+public @interface var {
+}

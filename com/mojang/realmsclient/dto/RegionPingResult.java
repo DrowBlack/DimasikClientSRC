@@ -1,0 +1,29 @@
+package com.mojang.realmsclient.dto;
+
+import com.google.gson.annotations.SerializedName;
+import com.mojang.realmsclient.dto.ValueObject;
+import java.util.Locale;
+import net.minecraft.realms.IPersistentSerializable;
+
+public class RegionPingResult
+extends ValueObject
+implements IPersistentSerializable {
+    @SerializedName(value="regionName")
+    private final String field_230632_a_;
+    @SerializedName(value="ping")
+    private final int field_230633_b_;
+
+    public RegionPingResult(String entityRendererIn, int mcIn) {
+        this.field_230632_a_ = entityRendererIn;
+        this.field_230633_b_ = mcIn;
+    }
+
+    public int func_230792_a_() {
+        return this.field_230633_b_;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(Locale.ROOT, "%s --> %.2f ms", this.field_230632_a_, Float.valueOf(this.field_230633_b_));
+    }
+}

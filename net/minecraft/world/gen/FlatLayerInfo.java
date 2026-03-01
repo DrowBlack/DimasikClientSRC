@@ -1,0 +1,42 @@
+package net.minecraft.world.gen;
+
+import com.mojang.datafixers.kinds.Applicative;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.util.registry.Registry;
+
+public class FlatLayerInfo {
+    public static final Codec<FlatLayerInfo> field_236929_a_ = RecordCodecBuilder.create(p_236930_0_ -> p_236930_0_.group(((MapCodec)Codec.intRange(0, 256).fieldOf("height")).forGetter(FlatLayerInfo::getLayerCount), ((MapCodec)Registry.BLOCK.fieldOf("block")).orElse(Blocks.AIR).forGetter(p_236931_0_ -> p_236931_0_.getLayerMaterial().getBlock())).apply((Applicative<FlatLayerInfo, ?>)p_236930_0_, FlatLayerInfo::new));
+    private final BlockState layerMaterial;
+    private final int layerCount;
+    private int layerMinimumY;
+
+    public FlatLayerInfo(int p_i45467_1_, Block layerMaterialIn) {
+        this.layerCount = p_i45467_1_;
+        this.layerMaterial = layerMaterialIn.getDefaultState();
+    }
+
+    public int getLayerCount() {
+        return this.layerCount;
+    }
+
+    public BlockState getLayerMaterial() {
+        return this.layerMaterial;
+    }
+
+    public int getMinY() {
+        return this.layerMinimumY;
+    }
+
+    public void setMinY(int minY) {
+        this.layerMinimumY = minY;
+    }
+
+    public String toString() {
+        return (String)(this.layerCount != 1 ? this.layerCount + "*" : "") + String.valueOf(Registry.BLOCK.getKey(this.layerMaterial.getBlock()));
+    }
+}

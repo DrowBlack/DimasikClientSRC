@@ -1,0 +1,72 @@
+package net.minecraft.entity.passive;
+
+import net.minecraft.entity.CreatureAttribute;
+import net.minecraft.entity.CreatureEntity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.pathfinding.PathNodeType;
+import net.minecraft.util.DamageSource;
+import net.minecraft.world.IWorldReader;
+import net.minecraft.world.World;
+
+public abstract class WaterMobEntity
+extends CreatureEntity {
+    protected WaterMobEntity(EntityType<? extends WaterMobEntity> type, World p_i48565_2_) {
+        super((EntityType<? extends CreatureEntity>)type, p_i48565_2_);
+        this.setPathPriority(PathNodeType.WATER, 0.0f);
+    }
+
+    @Override
+    public boolean canBreatheUnderwater() {
+        return true;
+    }
+
+    @Override
+    public CreatureAttribute getCreatureAttribute() {
+        return CreatureAttribute.WATER;
+    }
+
+    @Override
+    public boolean isNotColliding(IWorldReader worldIn) {
+        return worldIn.checkNoEntityCollision(this);
+    }
+
+    @Override
+    public int getTalkInterval() {
+        return 120;
+    }
+
+    @Override
+    protected int getExperiencePoints(PlayerEntity player) {
+        return 1 + this.world.rand.nextInt(3);
+    }
+
+    protected void updateAir(int p_209207_1_) {
+        if (this.isAlive() && !this.isInWaterOrBubbleColumn()) {
+            this.setAir(p_209207_1_ - 1);
+            if (this.getAir() == -20) {
+                this.setAir(0);
+                this.attackEntityFrom(DamageSource.DROWN, 2.0f);
+            }
+        } else {
+            this.setAir(300);
+        }
+    }
+
+    @Override
+    public void baseTick() {
+        int i = this.getAir();
+        super.baseTick();
+        this.updateAir(i);
+    }
+
+    @Override
+    public boolean isPushedByWater() {
+        return false;
+    }
+
+    @Override
+    public boolean canBeLeashedTo(PlayerEntity player) {
+        return false;
+    }
+}

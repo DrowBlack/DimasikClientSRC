@@ -1,0 +1,71 @@
+package net.optifine.entity.model;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.EnderCrystalRenderer;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.client.renderer.model.Model;
+import net.minecraft.client.renderer.model.ModelRenderer;
+import net.minecraft.entity.EntityType;
+import net.optifine.Config;
+import net.optifine.entity.model.EnderCrystalModel;
+import net.optifine.entity.model.IEntityRenderer;
+import net.optifine.entity.model.ModelAdapter;
+
+public class ModelAdapterEnderCrystal
+extends ModelAdapter {
+    public ModelAdapterEnderCrystal() {
+        this("end_crystal");
+    }
+
+    protected ModelAdapterEnderCrystal(String name) {
+        super(EntityType.END_CRYSTAL, name, 0.5f);
+    }
+
+    @Override
+    public Model makeModel() {
+        return new EnderCrystalModel();
+    }
+
+    @Override
+    public ModelRenderer getModelRenderer(Model model, String modelPart) {
+        if (!(model instanceof EnderCrystalModel)) {
+            return null;
+        }
+        EnderCrystalModel endercrystalmodel = (EnderCrystalModel)model;
+        if (modelPart.equals("cube")) {
+            return endercrystalmodel.cube;
+        }
+        if (modelPart.equals("glass")) {
+            return endercrystalmodel.glass;
+        }
+        return modelPart.equals("base") ? endercrystalmodel.base : null;
+    }
+
+    @Override
+    public String[] getModelRendererNames() {
+        return new String[]{"cube", "glass", "base"};
+    }
+
+    @Override
+    public IEntityRenderer makeEntityRender(Model modelBase, float shadowSize) {
+        EntityRendererManager entityrenderermanager = Minecraft.getInstance().getRenderManager();
+        EntityRenderer entityrenderer = entityrenderermanager.getEntityRenderMap().get(EntityType.END_CRYSTAL);
+        if (!(entityrenderer instanceof EnderCrystalRenderer)) {
+            Config.warn("Not an instance of RenderEnderCrystal: " + String.valueOf(entityrenderer));
+            return null;
+        }
+        EnderCrystalRenderer endercrystalrenderer = (EnderCrystalRenderer)entityrenderer;
+        if (endercrystalrenderer.getType() == null) {
+            endercrystalrenderer = new EnderCrystalRenderer(entityrenderermanager);
+        }
+        if (!(modelBase instanceof EnderCrystalModel)) {
+            Config.warn("Not a EnderCrystalModel model: " + String.valueOf(modelBase));
+            return null;
+        }
+        EnderCrystalModel endercrystalmodel = (EnderCrystalModel)modelBase;
+        endercrystalrenderer = endercrystalmodel.updateRenderer(endercrystalrenderer);
+        endercrystalrenderer.shadowSize = shadowSize;
+        return endercrystalrenderer;
+    }
+}

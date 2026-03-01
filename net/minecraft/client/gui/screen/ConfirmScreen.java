@@ -1,0 +1,84 @@
+package net.minecraft.client.gui.screen;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.minecraft.client.gui.DialogTexts;
+import net.minecraft.client.gui.IBidiRenderer;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.util.text.ITextComponent;
+
+public class ConfirmScreen
+extends Screen {
+    private final ITextComponent messageLine2;
+    private IBidiRenderer field_243276_q = IBidiRenderer.field_243257_a;
+    protected ITextComponent confirmButtonText;
+    protected ITextComponent cancelButtonText;
+    private int ticksUntilEnable;
+    protected final BooleanConsumer callbackFunction;
+
+    public ConfirmScreen(BooleanConsumer _callbackFunction, ITextComponent _title, ITextComponent _messageLine2) {
+        this(_callbackFunction, _title, _messageLine2, DialogTexts.GUI_YES, DialogTexts.GUI_NO);
+    }
+
+    public ConfirmScreen(BooleanConsumer p_i232270_1_, ITextComponent p_i232270_2_, ITextComponent p_i232270_3_, ITextComponent p_i232270_4_, ITextComponent p_i232270_5_) {
+        super(p_i232270_2_);
+        this.callbackFunction = p_i232270_1_;
+        this.messageLine2 = p_i232270_3_;
+        this.confirmButtonText = p_i232270_4_;
+        this.cancelButtonText = p_i232270_5_;
+    }
+
+    @Override
+    public String getNarrationMessage() {
+        return super.getNarrationMessage() + ". " + this.messageLine2.getString();
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        this.addButton(new Button(this.width / 2 - 155, this.height / 6 + 96, 150, 20, this.confirmButtonText, p_213002_1_ -> this.callbackFunction.accept(true)));
+        this.addButton(new Button(this.width / 2 - 155 + 160, this.height / 6 + 96, 150, 20, this.cancelButtonText, p_213001_1_ -> this.callbackFunction.accept(false)));
+        this.field_243276_q = IBidiRenderer.func_243258_a(this.font, this.messageLine2, this.width - 50);
+    }
+
+    @Override
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(matrixStack);
+        ConfirmScreen.drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 70, 0xFFFFFF);
+        this.field_243276_q.func_241863_a(matrixStack, this.width / 2, 90);
+        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    }
+
+    public void setButtonDelay(int ticksUntilEnableIn) {
+        this.ticksUntilEnable = ticksUntilEnableIn;
+        for (Widget widget : this.buttons) {
+            widget.active = false;
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (--this.ticksUntilEnable == 0) {
+            for (Widget widget : this.buttons) {
+                widget.active = true;
+            }
+        }
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) {
+            this.callbackFunction.accept(false);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+}

@@ -1,0 +1,30 @@
+package lombok.eclipse.handlers.singulars;
+
+import lombok.core.LombokImmutableList;
+import lombok.eclipse.handlers.singulars.EclipseGuavaSingularizer;
+
+public class EclipseGuavaMapSingularizer
+extends EclipseGuavaSingularizer {
+    private static final LombokImmutableList<String> SUFFIXES = LombokImmutableList.of("key", "value");
+    private static final LombokImmutableList<String> SUPPORTED_TYPES = LombokImmutableList.of("com.google.common.collect.ImmutableMap", "com.google.common.collect.ImmutableBiMap", "com.google.common.collect.ImmutableSortedMap");
+
+    @Override
+    public LombokImmutableList<String> getSupportedTypes() {
+        return SUPPORTED_TYPES;
+    }
+
+    @Override
+    protected LombokImmutableList<String> getArgumentSuffixes() {
+        return SUFFIXES;
+    }
+
+    @Override
+    protected String getAddMethodName() {
+        return "put";
+    }
+
+    @Override
+    protected String getAddAllTypeName() {
+        return "java.util.Map";
+    }
+}

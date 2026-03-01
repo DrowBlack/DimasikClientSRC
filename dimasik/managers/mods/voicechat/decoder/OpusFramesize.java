@@ -1,0 +1,14 @@
+package dimasik.managers.mods.voicechat.decoder;
+
+public enum OpusFramesize {
+    OPUS_FRAMESIZE_UNKNOWN,
+    OPUS_FRAMESIZE_ARG,
+    OPUS_FRAMESIZE_2_5_MS,
+    OPUS_FRAMESIZE_5_MS,
+    OPUS_FRAMESIZE_10_MS,
+    OPUS_FRAMESIZE_20_MS,
+    OPUS_FRAMESIZE_40_MS,
+    OPUS_FRAMESIZE_60_MS,
+    OPUS_FRAMESIZE_VARIABLE;
+
+}

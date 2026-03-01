@@ -1,0 +1,4 @@
+package lombok;
+
+public @interface var {
+}

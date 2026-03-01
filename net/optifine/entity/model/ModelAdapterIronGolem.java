@@ -1,0 +1,62 @@
+package net.optifine.entity.model;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.client.renderer.entity.IronGolemRenderer;
+import net.minecraft.client.renderer.entity.model.IronGolemModel;
+import net.minecraft.client.renderer.model.Model;
+import net.minecraft.client.renderer.model.ModelRenderer;
+import net.minecraft.entity.EntityType;
+import net.optifine.entity.model.IEntityRenderer;
+import net.optifine.entity.model.ModelAdapter;
+import net.optifine.reflect.Reflector;
+
+public class ModelAdapterIronGolem
+extends ModelAdapter {
+    public ModelAdapterIronGolem() {
+        super(EntityType.IRON_GOLEM, "iron_golem", 0.5f);
+    }
+
+    @Override
+    public Model makeModel() {
+        return new IronGolemModel();
+    }
+
+    @Override
+    public ModelRenderer getModelRenderer(Model model, String modelPart) {
+        if (!(model instanceof IronGolemModel)) {
+            return null;
+        }
+        IronGolemModel irongolemmodel = (IronGolemModel)model;
+        if (modelPart.equals("head")) {
+            return (ModelRenderer)Reflector.ModelIronGolem_ModelRenderers.getValue(irongolemmodel, 0);
+        }
+        if (modelPart.equals("body")) {
+            return (ModelRenderer)Reflector.ModelIronGolem_ModelRenderers.getValue(irongolemmodel, 1);
+        }
+        if (modelPart.equals("right_arm")) {
+            return (ModelRenderer)Reflector.ModelIronGolem_ModelRenderers.getValue(irongolemmodel, 2);
+        }
+        if (modelPart.equals("left_arm")) {
+            return (ModelRenderer)Reflector.ModelIronGolem_ModelRenderers.getValue(irongolemmodel, 3);
+        }
+        if (modelPart.equals("left_leg")) {
+            return (ModelRenderer)Reflector.ModelIronGolem_ModelRenderers.getValue(irongolemmodel, 4);
+        }
+        return modelPart.equals("right_leg") ? (ModelRenderer)Reflector.ModelIronGolem_ModelRenderers.getValue(irongolemmodel, 5) : null;
+    }
+
+    @Override
+    public String[] getModelRendererNames() {
+        return new String[]{"head", "body", "right_arm", "left_arm", "left_leg", "right_leg"};
+    }
+
+    @Override
+    public IEntityRenderer makeEntityRender(Model modelBase, float shadowSize) {
+        EntityRendererManager entityrenderermanager = Minecraft.getInstance().getRenderManager();
+        IronGolemRenderer irongolemrenderer = new IronGolemRenderer(entityrenderermanager);
+        irongolemrenderer.entityModel = (IronGolemModel)modelBase;
+        irongolemrenderer.shadowSize = shadowSize;
+        return irongolemrenderer;
+    }
+}

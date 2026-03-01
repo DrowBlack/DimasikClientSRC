@@ -1,0 +1,10 @@
+package it.unimi.dsi.fastutil.bytes;
+
+import it.unimi.dsi.fastutil.bytes.ByteBidirectionalIterator;
+import it.unimi.dsi.fastutil.bytes.ByteIterable;
+
+public interface ByteBidirectionalIterable
+extends ByteIterable {
+    @Override
+    public ByteBidirectionalIterator iterator();
+}

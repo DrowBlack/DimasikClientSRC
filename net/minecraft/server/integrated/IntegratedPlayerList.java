@@ -1,0 +1,45 @@
+package net.minecraft.server.integrated;
+
+import com.mojang.authlib.GameProfile;
+import java.net.SocketAddress;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.server.integrated.IntegratedServer;
+import net.minecraft.server.management.PlayerList;
+import net.minecraft.util.registry.DynamicRegistries;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.storage.PlayerData;
+
+public class IntegratedPlayerList
+extends PlayerList {
+    private CompoundNBT hostPlayerData;
+
+    public IntegratedPlayerList(IntegratedServer p_i232493_1_, DynamicRegistries.Impl p_i232493_2_, PlayerData p_i232493_3_) {
+        super(p_i232493_1_, p_i232493_2_, p_i232493_3_, 8);
+        this.setViewDistance(10);
+    }
+
+    @Override
+    protected void writePlayerData(ServerPlayerEntity playerIn) {
+        if (playerIn.getName().getString().equals(this.getServer().getServerOwner())) {
+            this.hostPlayerData = playerIn.writeWithoutTypeId(new CompoundNBT());
+        }
+        super.writePlayerData(playerIn);
+    }
+
+    @Override
+    public ITextComponent canPlayerLogin(SocketAddress p_206258_1_, GameProfile p_206258_2_) {
+        return p_206258_2_.getName().equalsIgnoreCase(this.getServer().getServerOwner()) && this.getPlayerByUsername(p_206258_2_.getName()) != null ? new TranslationTextComponent("multiplayer.disconnect.name_taken") : super.canPlayerLogin(p_206258_1_, p_206258_2_);
+    }
+
+    @Override
+    public IntegratedServer getServer() {
+        return (IntegratedServer)super.getServer();
+    }
+
+    @Override
+    public CompoundNBT getHostPlayerData() {
+        return this.hostPlayerData;
+    }
+}

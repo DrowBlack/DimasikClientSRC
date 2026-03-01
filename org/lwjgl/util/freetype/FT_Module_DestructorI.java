@@ -1,0 +1,27 @@
+package org.lwjgl.util.freetype;
+
+import org.lwjgl.system.APIUtil;
+import org.lwjgl.system.CallbackI;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.NativeType;
+import org.lwjgl.system.libffi.FFICIF;
+import org.lwjgl.system.libffi.LibFFI;
+
+@FunctionalInterface
+@NativeType(value="FT_Module_Destructor")
+public interface FT_Module_DestructorI
+extends CallbackI {
+    public static final FFICIF CIF = APIUtil.apiCreateCIF(LibFFI.FFI_DEFAULT_ABI, LibFFI.ffi_type_void, LibFFI.ffi_type_pointer);
+
+    @Override
+    default public FFICIF getCallInterface() {
+        return CIF;
+    }
+
+    @Override
+    default public void callback(long ret, long args) {
+        this.invoke(MemoryUtil.memGetAddress(MemoryUtil.memGetAddress(args)));
+    }
+
+    public void invoke(@NativeType(value="FT_Module") long var1);
+}

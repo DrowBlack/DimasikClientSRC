@@ -1,0 +1,171 @@
+package net.minecraft.world.gen;
+
+import com.google.common.collect.Maps;
+import com.mojang.serialization.Codec;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import javax.annotation.Nullable;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.LeavesBlock;
+import net.minecraft.util.BitArray;
+import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.Util;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.chunk.IChunk;
+
+public class Heightmap {
+    private static final Predicate<BlockState> IS_NOT_AIR = p_222688_0_ -> !p_222688_0_.isAir();
+    private static final Predicate<BlockState> BLOCKS_MOVEMENT = p_222689_0_ -> p_222689_0_.getMaterial().blocksMovement();
+    private final BitArray data = new BitArray(9, 256);
+    private final Predicate<BlockState> heightLimitPredicate;
+    private final IChunk chunk;
+
+    public Heightmap(IChunk chunkIn, Type type) {
+        this.heightLimitPredicate = type.getHeightLimitPredicate();
+        this.chunk = chunkIn;
+    }
+
+    public static void updateChunkHeightmaps(IChunk chunkIn, Set<Type> types) {
+        int i = types.size();
+        ObjectArrayList objectlist = new ObjectArrayList(i);
+        Iterator objectlistiterator = objectlist.iterator();
+        int j = chunkIn.getTopFilledSegment() + 16;
+        BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
+        for (int k = 0; k < 16; ++k) {
+            block1: for (int l = 0; l < 16; ++l) {
+                for (Type heightmap$type : types) {
+                    objectlist.add(chunkIn.getHeightmap(heightmap$type));
+                }
+                for (int i1 = j - 1; i1 >= 0; --i1) {
+                    blockpos$mutable.setPos(k, i1, l);
+                    BlockState blockstate = chunkIn.getBlockState(blockpos$mutable);
+                    if (blockstate.isIn(Blocks.AIR)) continue;
+                    while (objectlistiterator.hasNext()) {
+                        Heightmap heightmap = (Heightmap)objectlistiterator.next();
+                        if (!heightmap.heightLimitPredicate.test(blockstate)) continue;
+                        heightmap.set(k, l, i1 + 1);
+                        objectlistiterator.remove();
+                    }
+                    if (objectlist.isEmpty()) continue block1;
+                    objectlistiterator.back(i);
+                }
+            }
+        }
+    }
+
+    public boolean update(int p_202270_1_, int p_202270_2_, int p_202270_3_, BlockState p_202270_4_) {
+        int i = this.getHeight(p_202270_1_, p_202270_3_);
+        if (p_202270_2_ <= i - 2) {
+            return false;
+        }
+        if (this.heightLimitPredicate.test(p_202270_4_)) {
+            if (p_202270_2_ >= i) {
+                this.set(p_202270_1_, p_202270_3_, p_202270_2_ + 1);
+                return true;
+            }
+        } else if (i - 1 == p_202270_2_) {
+            BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
+            for (int j = p_202270_2_ - 1; j >= 0; --j) {
+                blockpos$mutable.setPos(p_202270_1_, j, p_202270_3_);
+                if (!this.heightLimitPredicate.test(this.chunk.getBlockState(blockpos$mutable))) continue;
+                this.set(p_202270_1_, p_202270_3_, j + 1);
+                return true;
+            }
+            this.set(p_202270_1_, p_202270_3_, 0);
+            return true;
+        }
+        return false;
+    }
+
+    public int getHeight(int x, int z) {
+        return this.getHeight(Heightmap.getDataArrayIndex(x, z));
+    }
+
+    private int getHeight(int dataArrayIndex) {
+        return this.data.getAt(dataArrayIndex);
+    }
+
+    private void set(int x, int z, int value) {
+        this.data.setAt(Heightmap.getDataArrayIndex(x, z), value);
+    }
+
+    public void setDataArray(long[] dataIn) {
+        System.arraycopy(dataIn, 0, this.data.getBackingLongArray(), 0, dataIn.length);
+    }
+
+    public long[] getDataArray() {
+        return this.data.getBackingLongArray();
+    }
+
+    private static int getDataArrayIndex(int x, int z) {
+        return x + z * 16;
+    }
+
+    public static enum Type implements IStringSerializable
+    {
+        WORLD_SURFACE_WG("WORLD_SURFACE_WG", Usage.WORLDGEN, IS_NOT_AIR),
+        WORLD_SURFACE("WORLD_SURFACE", Usage.CLIENT, IS_NOT_AIR),
+        OCEAN_FLOOR_WG("OCEAN_FLOOR_WG", Usage.WORLDGEN, BLOCKS_MOVEMENT),
+        OCEAN_FLOOR("OCEAN_FLOOR", Usage.LIVE_WORLD, BLOCKS_MOVEMENT),
+        MOTION_BLOCKING("MOTION_BLOCKING", Usage.CLIENT, p_222680_0_ -> p_222680_0_.getMaterial().blocksMovement() || !p_222680_0_.getFluidState().isEmpty()),
+        MOTION_BLOCKING_NO_LEAVES("MOTION_BLOCKING_NO_LEAVES", Usage.LIVE_WORLD, p_222682_0_ -> (p_222682_0_.getMaterial().blocksMovement() || !p_222682_0_.getFluidState().isEmpty()) && !(p_222682_0_.getBlock() instanceof LeavesBlock));
+
+        public static final Codec<Type> field_236078_g_;
+        private final String id;
+        private final Usage usage;
+        private final Predicate<BlockState> heightLimitPredicate;
+        private static final Map<String, Type> BY_ID;
+
+        private Type(String idIn, Usage usageIn, Predicate<BlockState> heightLimitPredicateIn) {
+            this.id = idIn;
+            this.usage = usageIn;
+            this.heightLimitPredicate = heightLimitPredicateIn;
+        }
+
+        public String getId() {
+            return this.id;
+        }
+
+        public boolean isUsageClient() {
+            return this.usage == Usage.CLIENT;
+        }
+
+        public boolean isUsageNotWorldgen() {
+            return this.usage != Usage.WORLDGEN;
+        }
+
+        @Nullable
+        public static Type getTypeFromId(String idIn) {
+            return BY_ID.get(idIn);
+        }
+
+        public Predicate<BlockState> getHeightLimitPredicate() {
+            return this.heightLimitPredicate;
+        }
+
+        @Override
+        public String getString() {
+            return this.id;
+        }
+
+        static {
+            field_236078_g_ = IStringSerializable.createEnumCodec(Type::values, Type::getTypeFromId);
+            BY_ID = Util.make(Maps.newHashMap(), p_222679_0_ -> {
+                for (Type heightmap$type : Type.values()) {
+                    p_222679_0_.put(heightmap$type.id, heightmap$type);
+                }
+            });
+        }
+    }
+
+    public static enum Usage {
+        WORLDGEN,
+        LIVE_WORLD,
+        CLIENT;
+
+    }
+}

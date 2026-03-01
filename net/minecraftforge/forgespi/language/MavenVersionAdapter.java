@@ -1,0 +1,23 @@
+package net.minecraftforge.forgespi.language;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRange;
+
+public final class MavenVersionAdapter {
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private MavenVersionAdapter() {
+    }
+
+    public static VersionRange createFromVersionSpec(String spec) {
+        try {
+            return VersionRange.createFromVersionSpec(spec);
+        }
+        catch (InvalidVersionSpecificationException e) {
+            LOGGER.fatal("Failed to parse version spec {}", (Object)spec, (Object)e);
+            throw new RuntimeException("Failed to parse spec", e);
+        }
+    }
+}
